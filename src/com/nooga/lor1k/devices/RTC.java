@@ -1,6 +1,6 @@
 package com.nooga.lor1k.devices;
 
-public class RTC implements Device {
+public class RTC extends Device {
     @Override
     public int readReg32(int addr) {
         return 0;

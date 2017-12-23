@@ -13,7 +13,20 @@ public class MessageBus {
         System.out.println("CPU Panic!");
     }
 
+    public void Abort(CPU cpu) {
+        cpu.stop();
+        System.out.println("CPU Panic! Stopped Execution.");
+    }
+
     public String addrToString(int i) {
         return String.format("%08x", i);
+    }
+
+    private String leftPad(String s) {
+        return "00000000000000000000000000000000".substring(s.length()) + s;
+    }
+
+    public String instrToString(int ins) {
+        return leftPad(Integer.toBinaryString(ins));
     }
 }

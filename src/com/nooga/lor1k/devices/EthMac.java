@@ -1,6 +1,7 @@
 package com.nooga.lor1k.devices;
 
-public class EthMac implements Device {
+public class EthMac extends Device {
+
     @Override
     public int readReg32(int addr) {
         return 0;

@@ -29,7 +29,7 @@ public class CPU {
     private int nextpc = 0;
     private boolean delayed_inst = false;
 
-    private IntBuffer r;
+    public IntBuffer r; // TODO change to private later
     private FloatBuffer f;
 
     private int TTMR = 0;
@@ -63,6 +63,7 @@ public class CPU {
     private IntBuffer group0;
     private IntBuffer group1;
     private IntBuffer group2;
+    private boolean stop_flag;
 
     public CPU(MessageBus message_bus, RAM ram) {
         this.message = message_bus;
@@ -79,7 +80,9 @@ public class CPU {
         this.Reset();
     }
 
-    private void Reset() {
+    public void Reset() {
+        this.stop_flag = false;
+
         this.TTMR = 0x0;
         this.TTCR = 0x0;
         this.PICMR = 0x3;
@@ -104,8 +107,46 @@ public class CPU {
     }
 
     // return instruction from RAM, pc is a word index, not address
-    private int getInstruction(int pc) {
-        return 0x0;
+    private int getInstruction(int addr) {
+        if (!this.SR_IME) {
+            return this.ram.Read32Big(addr);
+        }
+        // pagesize is 8192 bytes
+        // nways are 1
+        // nsets are 64
+
+        int setindex = (addr >> 13) & 63;
+        setindex &= 63; // number of sets
+        int tlmbr = this.group2.get(0x200 | setindex);
+
+        // test if tlmbr is valid
+        if (((tlmbr & 1) == 0) || ((tlmbr >> 19) != (addr >> 19))) {
+            this.Exception(CPUException.EXCEPT_ITLBMISS, this.pc<<2);
+            return -1;
+        }
+        // set lru
+        if (0 != (tlmbr & 0xC0)) {
+            message.Debug("Error: LRU is not supported");
+            message.Abort(this);
+        }
+
+        int tlbtr = this.group2.get(0x280 | setindex);
+        //Test for page fault
+        // check if supervisor mode
+        if (this.SR_SM) {
+            // check if user read enable is not set(URE)
+            if (0 == (tlbtr & 0x40)) {
+                this.Exception(CPUException.EXCEPT_IPF, this.pc<<2);
+                return -1;
+            }
+        } else {
+            // check if supervisor read enable is not set (SRE)
+            if (0 == (tlbtr & 0x80)) {
+                this.Exception(CPUException.EXCEPT_IPF, this.pc<<2);
+                return -1;
+            }
+        }
+        return this.ram.Read32Big((int)(((tlbtr & 0xFFFFE000) | (addr & 0x1FFF)) & 0xFFFFFFFFL));
     }
 
 
@@ -116,6 +157,11 @@ public class CPU {
         long delta;
 
         do {
+            if(this.stop_flag) {
+                this.stop_flag = false;
+                return;
+            }
+
             this.clock++;
 
             // do this not so often
@@ -140,7 +186,10 @@ public class CPU {
                 }
             }
 
-            ins = this.getInstruction(this.pc);
+            ins = this.getInstruction(this.pc << 2) ;
+
+            //message.Debug("T   " + message.addrToString(this.pc << 2) + " : " + message.instrToString(ins) );
+
             if(ins == -1) {
                 this.pc = this.nextpc++;
                 continue;
@@ -192,6 +241,14 @@ public class CPU {
                 // nop
                 case 0x5:
                     // nothing ;)
+
+                    //for running tests
+                    if((ins & 0xff) == 1) {
+                        message.Debug("test reports " + message.addrToString(this.r.get(3)));
+                        this.stop_flag = true;
+                    } else if((ins & 0xff) == 2) {
+                       // message.Debug("test result r[3] = " + message.addrToString(this.r.get(3)));
+                    }
                     break;
 
                 // movhi & macrc
@@ -201,7 +258,7 @@ public class CPU {
                     if(0 != (ins & 0x10000)) {
                         // macrc
                         message.Debug("Error: macrc not supported\n");
-                        message.Abort();
+                        message.Abort(this);
                     } else {
                         // movhi
                         this.r.put(rindex,  ((ins & 0xFFFF) << 16));
@@ -250,18 +307,22 @@ public class CPU {
                     this.r.put(32,  this.r.get((ins >> 16) & 0x1F)  + ((ins << 16) >> 16));
 
                     if ((this.r.get(32)  & 3) != 0) {
-                        message.Debug("Error in lwz: no unaligned access allowed");
-                        message.Abort();
+                        message.Debug("Error in lwa: no unaligned access allowed");
+                        message.Abort(this);
                     }
 
-                    this.r.put(33,  this.DTLBLookup(this.r.get(32) , false));
+                   // message.Debug("lwa 32 " + message.addrToString(this.r.get(32)));
+
+                    this.r.put(33,  (int)this.DTLBLookup(this.r.get(32) , false));
 
                     if (this.r.get(33)  == -1) {
                         break;
                     }
 
+                    //message.Debug("lwa 33 " + message.addrToString(this.r.get(33)));
+
                     this.EA = this.r.get(33) ;
-                    this.r.put((ins >> 21) & 0x1F,  (this.r.get(33)  > 0) ? ram.int32mem.get(this.r.get(33)  >> 2) : ram.Read32Big(this.r.get(33)));
+                    this.r.put((ins >> 21) & 0x1F,  (this.r.get(33)  > 0) ? ram.int32mem.get(this.r.get(33) >> 2) : ram.Read32Big(this.r.get(33)));
                     break;
 
                 // lwz
@@ -270,14 +331,18 @@ public class CPU {
 
                     if ((this.r.get(32)  & 3) != 0) {
                         message.Debug("Error in lwz: no unaligned access allowed");
-                        message.Abort();
+                        message.Abort(this);
                     }
 
-                    this.r.put(33,  this.DTLBLookup(this.r.get(32) , false));
+                    //message.Debug("lwz 32 " + message.addrToString(this.r.get(32)));
+
+                    this.r.put(33,  (int)this.DTLBLookup(this.r.get(32) , false));
 
                     if (this.r.get(33)  == -1) {
                         break;
                     }
+
+                    //message.Debug("lwz 33 " + message.addrToString(this.r.get(33)));
 
                     this.r.put((ins >> 21) & 0x1F, (this.r.get(33) > 0) ? ram.int32mem.get(this.r.get(33) >> 2) : ram.Read32Big(this.r.get(33)));
                     break;
@@ -285,7 +350,7 @@ public class CPU {
                 // lbz
                 case 0x23:
                     this.r.put(32,  this.r.get((ins >> 16) & 0x1F)  + ((ins << 16) >> 16));
-                    this.r.put(33,  this.DTLBLookup(this.r.get(32) , false));
+                    this.r.put(33,  (int)this.DTLBLookup(this.r.get(32) , false));
 
                     if (this.r.get(33)  == -1) {
                         break;
@@ -297,7 +362,7 @@ public class CPU {
                 // lbs
                 case 0x24:
                     this.r.put(32,  this.r.get((ins >> 16) & 0x1F)  + ((ins << 16) >> 16));
-                    this.r.put(33,  this.DTLBLookup(this.r.get(32) , false));
+                    this.r.put(33,  (int)this.DTLBLookup(this.r.get(32) , false));
                     if (this.r.get(33)  == -1) {
                         break;
                     }
@@ -307,7 +372,7 @@ public class CPU {
                 // lhz
                 case 0x25:
                     this.r.put(32,  this.r.get((ins >> 16) & 0x1F)  + ((ins << 16) >> 16));
-                    this.r.put(33,  this.DTLBLookup(this.r.get(32) , false));
+                    this.r.put(33,  (int)this.DTLBLookup(this.r.get(32) , false));
                     if (this.r.get(33)  == -1) {
                         break;
                     }
@@ -317,7 +382,7 @@ public class CPU {
                 // lhs
                 case 0x26:
                     this.r.put(32,  this.r.get((ins >> 16) & 0x1F)  + ((ins << 16) >> 16));
-                    this.r.put(33,  this.DTLBLookup(this.r.get(32) , false));
+                    this.r.put(33,  (int)this.DTLBLookup(this.r.get(32) , false));
                     if (this.r.get(33)  == -1) {
                         break;
                     }
@@ -373,7 +438,7 @@ public class CPU {
                             break;
                         default:
                             message.Debug("Error: opcode 2E function not implemented");
-                            message.Abort();
+                            message.Abort(this);
                             break;
                     }
                     break;
@@ -424,7 +489,7 @@ public class CPU {
                             break;
                         default:
                             message.Debug("Error: sf...i not supported yet");
-                            message.Abort();
+                            message.Abort(this);
                             break;
                     }
                     break;
@@ -434,7 +499,8 @@ public class CPU {
                     imm = (ins & 0x7FF) | ((ins >> 10) & 0xF800);
                     this.pc = this.nextpc++;
                     this.delayed_inst = false;
-                    this.SetSPR(this.r.get((ins >> 16) & 0x1F)  | imm, this.r.get((ins >> 11) & 0x1F) ); // could raise an exception
+                    int x = this.r.get((ins >> 11) & 0x1F);
+                    this.SetSPR(this.r.get((ins >> 16) & 0x1F)  | imm, x ); // could raise an exception
                     continue;
 
                 // floating point instructions
@@ -497,7 +563,7 @@ public class CPU {
                             break;
                         default:
                             message.Debug("Error: lf. function " + message.addrToString(ins & 0xFF) + " not supported yet");
-                            message.Abort();
+                            message.Abort(this);
                             break;
                     }
                     break;
@@ -508,9 +574,9 @@ public class CPU {
                     this.r.put(32,  this.r.get((ins >> 16) & 0x1F)  + imm);
                     if (0 != (this.r.get(32)  & 0x3)) {
                         message.Debug("Error in sw: no aligned memory access");
-                        message.Abort();
+                        message.Abort(this);
                     }
-                    this.r.put(33,  this.DTLBLookup(this.r.get(32) , true));
+                    this.r.put(33,  (int)this.DTLBLookup(this.r.get(32) , true));
                     if (this.r.get(33)  == -1) {
                         break;
                     }
@@ -532,9 +598,9 @@ public class CPU {
                     this.r.put(32,  this.r.get((ins >> 16) & 0x1F)  + imm);
                     if (0 != (this.r.get(32) & 0x3)) {
                         message.Debug("Error in sw: no aligned memory access");
-                        message.Abort();
+                        message.Abort(this);
                     }
-                    this.r.put(33,  this.DTLBLookup(this.r.get(32) , true));
+                    this.r.put(33,  (int)this.DTLBLookup(this.r.get(32) , true));
                     if (this.r.get(33)  == -1) {
                         break;
                     }
@@ -549,7 +615,7 @@ public class CPU {
                 case 0x36:
                     imm = ((((ins >> 10) & 0xF800) | (ins & 0x7FF)) << 16) >> 16;
                     this.r.put(32,  this.r.get((ins >> 16) & 0x1F)  + imm);
-                    this.r.put(33,  this.DTLBLookup(this.r.get(32) , true));
+                    this.r.put(33,  (int)this.DTLBLookup(this.r.get(32) , true));
                     if (this.r.get(33)  == -1) {
                         break;
                     }
@@ -560,7 +626,7 @@ public class CPU {
                 case 0x37:
                     imm = ((((ins >> 10) & 0xF800) | (ins & 0x7FF)) << 16) >> 16;
                     this.r.put(32,  this.r.get((ins >> 16) & 0x1F)  + imm);
-                    this.r.put(33,  this.DTLBLookup(this.r.get(32) , true));
+                    this.r.put(33,  (int)this.DTLBLookup(this.r.get(32) , true));
                     if (this.r.get(33)  == -1) {
                         break;
                     }
@@ -572,6 +638,7 @@ public class CPU {
                     rA = this.r.get((ins >> 16) & 0x1F) ;
                     rB = this.r.get((ins >> 11) & 0x1F) ;
                     rindex = (ins >> 21) & 0x1F;
+                    message.Debug("3op " + (ins & 0x3CF) + ": " + rindex + " <- " + rA + " . " + rB);
                     switch (ins & 0x3CF) {
                         case 0x0:
                             // add signed
@@ -664,7 +731,7 @@ public class CPU {
                             break;
                         default:
                             message.Debug("Error: op38 opcode not supported yet");
-                            message.Abort();
+                            message.Abort(this);
                             break;
                     }
                     break;
@@ -714,13 +781,21 @@ public class CPU {
                             break;
                         default:
                             message.Debug("Error: sf.... function supported yet");
-                            message.Abort();
+                            message.Abort(this);
                     }
                     break;
 
                 default:
-                    System.out.format("illegal instruction pc=%8x ins=%8x", this.pc, ins);
+                    System.out.format("illegal instruction pc=%8x ins=%8x\n", this.pc << 2, ins);
+                    message.Abort(this);
                     break;
+            }
+
+            if(this.pc << 2 >= 0x0035417c) {
+                System.out.print(message.addrToString(this.pc << 2) + " regs ");
+                        for(int i = 0; i < 8; i++)
+                            System.out.print(i + "=" + message.addrToString(this.r.get(i)) + " ");
+                System.out.println();
             }
 
             this.pc = this.nextpc++;
@@ -744,11 +819,14 @@ public class CPU {
                 break;
             case 1:
                 // Data MMU
+               // x &= 0x0fffffff; // remove this
                 this.group1.put(address, x);
+                message.Debug(message.addrToString(this.pc << 2)  + " set DTLB " + message.addrToString(address) + " = " + message.addrToString(x));
                 break;
             case 2:
                 // ins MMU
                 this.group2.put(address, x);
+                message.Debug(message.addrToString(this.pc << 2)  + " set ITLB " + message.addrToString(address) + " = " + message.addrToString(x));
                 break;
             case 3:
                 // data cache, not supported
@@ -766,7 +844,7 @@ public class CPU {
                         if (this.SR_IEE) {
                             if (0 != (this.PICMR & this.PICSR)) {
                                 message.Debug("Error in SetSPR: Direct triggering of interrupt exception not supported?");
-                                message.Abort();
+                                message.Abort(this);
                             }
                         }
                         break;
@@ -774,7 +852,7 @@ public class CPU {
                         break;
                     default:
                         message.Debug("Error in SetSPR: interrupt address not supported");
-                        message.Abort();
+                        message.Abort(this);
                 }
                 break;
             case 10:
@@ -784,8 +862,10 @@ public class CPU {
                         this.TTMR = x;
                         if(((this.TTMR >> 30)&3) != 0x3) {
                             // TODO Marcin was commented out in the original
-                            message.Debug("Error in SetSPR: Timer mode other than continuous not supported");
-                            message.Abort();
+                            // looks like it's not lethal
+
+                            //message.Debug("Error in SetSPR: Timer mode other than continuous not supported");
+                            //message.Abort(this);
                         }
                         break;
                     case 1:
@@ -793,14 +873,14 @@ public class CPU {
                         break;
                     default:
                         message.Debug("Error in SetSPR: Tick timer address not supported");
-                        message.Abort();
+                        message.Abort(this);
                         break;
                 }
                 break;
 
             default:
                 message.Debug("Error in SetSPR: group " + group + " not found");
-                message.Abort();
+                message.Abort(this);
                 break;
         }
     }
@@ -831,7 +911,7 @@ public class CPU {
                         return this.PICSR;
                     default:
                         message.Debug("Error in GetSPR: PIC address unknown");
-                        message.Abort();
+                        message.Abort(this);
                         break;
                 }
                 break;
@@ -845,19 +925,19 @@ public class CPU {
                         return this.TTCR; // or clock
                     default:
                         message.Debug("Error in GetSPR: Tick timer address unknown");
-                        message.Abort();
+                        message.Abort(this);
                         break;
                 }
                 break;
             default:
                 message.Debug("Error in GetSPR: group " + group +  " unknown");
-                message.Abort();
+                message.Abort(this);
                 break;
         }
         return -1; // shouldn't happen ever
     }
 
-    private int DTLBLookup(int addr, boolean write) {
+    private long DTLBLookup(int addr, boolean write) {
         if (!this.SR_DME) {
             return addr;
         }
@@ -874,7 +954,7 @@ public class CPU {
         // set lru
         if (0 != (tlmbr & 0xC0)) {
             message.Debug("Error: LRU ist not supported");
-            message.Abort();
+            message.Abort(this);
         }
 
         int tlbtr = this.group1.get(0x280 | setindex); // translate register
@@ -893,12 +973,12 @@ public class CPU {
                 return -1;
             }
         }
-        return ((tlbtr & 0xFFFFE000) | (addr & 0x1FFF));
+        return (((tlbtr & 0xFFFFE000) | (addr & 0x1FFF)) & 0xFFFFFFFFL);
     }
 
     private void Exception(int ex_type, int addr) {
         int except_vector = ex_type | (this.SR_EPH ? 0xf0000000 : 0x0);
-        //message.Debug("Info: Raising Exception " + utils.ToHex(excepttype));
+        message.Debug("Info: Raising Exception " + CPUException.toString(ex_type) + "(" + message.addrToString(ex_type)+") at " + message.addrToString(addr));
 
         this.SetSPR(SPR_EEAR_BASE, addr);
         this.SetSPR(SPR_ESR_BASE, this.GetFlags());
@@ -932,7 +1012,7 @@ public class CPU {
                 break;
             default:
                 message.Debug("Error in Exception: exception type not supported");
-                message.Abort();
+                message.Abort(this);
         }
 
         // Handle restart mode timer
@@ -946,7 +1026,7 @@ public class CPU {
 
     private int GetFlags() {
         int x = 0x0;
-        x |= this.SR_SM  ? (1 << 0) : 0;
+        x |= this.SR_SM  ? (1     ) : 0;
         x |= this.SR_TEE ? (1 << 1) : 0;
         x |= this.SR_IEE ? (1 << 2) : 0;
         x |= this.SR_DCE ? (1 << 3) : 0;
@@ -993,19 +1073,19 @@ public class CPU {
 
         if (this.SR_LEE) {
             message.Debug("little endian not supported");
-            message.Abort();
+            message.Abort(this);
         }
         if (0 != this.SR_CID) {
             message.Debug("context id not supported");
-            message.Abort();
+            message.Abort(this);
         }
         if (this.SR_EPH) {
             message.Debug("exception prefix not supported");
-            message.Abort();
+            message.Abort(this);
         }
         if (this.SR_DSX) {
             message.Debug("delay slot exception not supported");
-            message.Abort();
+            message.Abort(this);
         }
         if (this.SR_IEE && old_SR_IEE) {
             this.CheckForInterrupt();
@@ -1029,5 +1109,9 @@ public class CPU {
 
     public void ClearInterrupt(int line, int cpuid) {
         this.PICSR &= ~(1 << line);
+    }
+
+    public void stop() {
+        this.stop_flag = true;
     }
 }

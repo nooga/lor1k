@@ -7,13 +7,16 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
 public class RAM {
-    private ByteBuffer heap;
+    ByteBuffer heap;
     public ShortBuffer int16mem;
     public IntBuffer int32mem;
+    int offset;
+
 
     private Device[] devices;
 
     public RAM(int size, int offset) {
+        this.offset = offset;
         this.heap = ByteBuffer.allocateDirect(size);
         this.int32mem = this.int32Area(offset, size - offset);
         this.int16mem = this.int16Area(offset, size - offset);
@@ -22,6 +25,7 @@ public class RAM {
     }
 
     public RAM(ByteBuffer heap, int offset) {
+        this.offset = offset;
         this.heap = heap;
         this.int32mem = this.int32Area(offset, heap.limit() - offset);
         this.int16mem = this.int16Area(offset, heap.limit() - offset);
@@ -31,16 +35,16 @@ public class RAM {
 
 
     public IntBuffer int32Area(int offset, int size) {
-        return ((ByteBuffer)((ByteBuffer)this.heap.position(offset ^ Util.M_UINT32ZE)).slice().limit(size ^ Util.M_UINT32ZE)).asIntBuffer();
+        return ((ByteBuffer)((ByteBuffer)this.heap.position(offset)).slice().limit(size)).asIntBuffer();
     }
 
     public ShortBuffer int16Area(int offset, int size) {
-        return ((ByteBuffer)((ByteBuffer)this.heap.position(offset ^ Util.M_UINT32ZE)).slice().limit(size ^ Util.M_UINT32ZE)).asShortBuffer();
+        return ((ByteBuffer)((ByteBuffer)this.heap.position(offset)).slice().limit(size)).asShortBuffer();
     }
 
 
     public FloatBuffer float32Area(int offset, int size) {
-        return ((ByteBuffer)((ByteBuffer)this.heap.position(offset ^ Util.M_UINT32ZE)).slice().limit(size ^ Util.M_UINT32ZE)).asFloatBuffer();
+        return ((ByteBuffer)((ByteBuffer)this.heap.position(offset)).slice().limit(size)).asFloatBuffer();
     }
 
     public byte Read8Big(int addr) {
@@ -86,5 +90,14 @@ public class RAM {
         } else {
             this.devices[(addr >> 24) & 0xFF].writeReg32(addr & 0xFFFFFF, value);
         }
+    }
+
+    public void addDevice(Device dev, int addr, int range) {
+        if (0 != (addr & 0xFFFFFF)) {
+            //message.Debug("Error: The device address not in the allowed memory region");
+            //message.Abort();
+        }
+
+        this.devices[(addr>>24)&0xFF] = dev;
     }
 }

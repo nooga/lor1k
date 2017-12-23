@@ -1,6 +1,6 @@
 package com.nooga.lor1k.devices;
 
-public class ROM implements Device {
+public class ROM extends Device {
 
     @Override
     public int readReg32(int addr) {
