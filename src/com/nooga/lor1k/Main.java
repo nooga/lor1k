@@ -45,29 +45,32 @@ public class Main {
         }
 
         UART uart = new UART(mb, cpu,0x2);
-        ram.addDevice(uart,0x90000000, 0x7);   // UART
+//        ram.addDevice(uart,0x90000000, 0x7);   // UART
 //        ram.addDevice(new Device(mb),0x91000000, 0x1000); // FB
 //        ram.addDevice(new Device(mb),0x9e000000, 0x1000); // ATA
 //        ram.addDevice(new Device(mb),0x92000000, 0x1000); // Eth
 //
-        Path path = Paths.get("kernel/vmlinux.bin");
-        ram.heap.position(ram.offset);
-        try {
-            ram.heap.put(Files.readAllBytes(path));
-        } catch (IOException e) {
-            e.printStackTrace();
+        Path path;
+
+        if(false) { //load jor1k kernel
+            path = Paths.get("kernel/vmlinux.bin");
+            ram.heap.position(ram.offset);
+            try {
+                ram.heap.put(Files.readAllBytes(path));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            ram.heap.rewind();
+        } else { //load lor1k kernel
+            path = Paths.get("kernel/vmlinux");
+            ELFLoader eld = new ELFLoader(ram);
+            eld.load(path);
         }
-        ram.heap.rewind();
-        //ELFLoader eld = new ELFLoader(ram);
-
-        //eld.load(path);
-
         cpu.Reset();
 //
         while(true) {
             cpu.step(1000, 10);
             uart.step();
-
         }
 //        System.out.format("%08x", cpu.r.get(2));
     }

@@ -2,22 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="55e98216-2d64-4d72-8a40-95c1b406ed25" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/CPUTest.java" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/ELFLoader.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/CPU.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/CPU.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/CPUException.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/CPUException.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/Main.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/Main.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/MessageBus.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/MessageBus.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/RAM.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/RAM.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/Device.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/Device.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/EthMac.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/EthMac.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/IRQ.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/IRQ.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/Keyboard.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/Keyboard.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/ROM.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/ROM.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/RTC.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/RTC.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/UART.java" afterPath="$PROJECT_DIR$/src/com/nooga/lor1k/devices/UART.java" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -32,8 +18,8 @@
       <file leaf-file-name="Main.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/nooga/lor1k/Main.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="570">
-              <caret line="58" column="9" lean-forward="true" selection-start-line="58" selection-start-column="9" selection-end-line="58" selection-end-column="9" />
+            <state relative-caret-position="416">
+              <caret line="47" column="2" lean-forward="false" selection-start-line="47" selection-start-column="2" selection-end-line="47" selection-end-column="2" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -56,8 +42,8 @@
       <file leaf-file-name="CPU.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/com/nooga/lor1k/CPU.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="453">
-              <caret line="797" column="37" lean-forward="true" selection-start-line="797" selection-start-column="37" selection-end-line="797" selection-end-column="37" />
+            <state relative-caret-position="573">
+              <caret line="191" column="15" lean-forward="false" selection-start-line="191" selection-start-column="15" selection-end-line="191" selection-end-column="15" />
               <folding />
             </state>
           </provider>
@@ -172,6 +158,7 @@
       <find>ITLBMI</find>
       <find>DTLBM</find>
       <find>and</find>
+      <find>set</find>
     </findStrings>
     <replaceStrings>
       <replace>&amp; M_UINT32</replace>
@@ -349,10 +336,10 @@
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32849365" sideWeight="0.48385417" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Palette&#9;" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.35027224" sideWeight="0.5473958" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19782214" sideWeight="0.5473958" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="REPL" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.35027224" sideWeight="0.45260417" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19782214" sideWeight="0.45260417" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Leiningen" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -689,8 +676,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/nooga/lor1k/Main.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="570">
-          <caret line="58" column="9" lean-forward="true" selection-start-line="58" selection-start-column="9" selection-end-line="58" selection-end-column="9" />
+        <state relative-caret-position="416">
+          <caret line="47" column="2" lean-forward="false" selection-start-line="47" selection-start-column="2" selection-end-line="47" selection-end-column="2" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
@@ -699,8 +686,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/nooga/lor1k/CPU.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="453">
-          <caret line="797" column="37" lean-forward="true" selection-start-line="797" selection-start-column="37" selection-end-line="797" selection-end-column="37" />
+        <state relative-caret-position="573">
+          <caret line="191" column="15" lean-forward="false" selection-start-line="191" selection-start-column="15" selection-end-line="191" selection-end-column="15" />
           <folding />
         </state>
       </provider>

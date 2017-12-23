@@ -64,6 +64,7 @@ public class CPU {
     private IntBuffer group1;
     private IntBuffer group2;
     private boolean stop_flag;
+    private boolean print = false;
 
     public CPU(MessageBus message_bus, RAM ram) {
         this.message = message_bus;
@@ -457,19 +458,19 @@ public class CPU {
                             break;
                         case 0x2:
                             // sfgtui
-                            this.SR_F = this.r.get((ins >> 16) & 0x1F)  > (imm & M_UINT32);
+                            this.SR_F = (this.r.get((ins >> 16) & 0x1F) & M_UINT32)  > (imm & M_UINT32);
                             break;
                         case 0x3:
                             // sfgeui
-                            this.SR_F = this.r.get((ins >> 16) & 0x1F) >=  (imm & M_UINT32);
+                            this.SR_F = (this.r.get((ins >> 16) & 0x1F) & M_UINT32) >=  (imm & M_UINT32);
                             break;
                         case 0x4:
                             // sfltui
-                            this.SR_F = this.r.get((ins >> 16) & 0x1F) < (imm & M_UINT32);
+                            this.SR_F = (this.r.get((ins >> 16) & 0x1F) & M_UINT32) < (imm & M_UINT32);
                             break;
                         case 0x5:
                             // sfleui
-                            this.SR_F = this.r.get((ins >> 16) & 0x1F) <=  (imm & M_UINT32);
+                            this.SR_F = (this.r.get((ins >> 16) & 0x1F) & M_UINT32) <=  (imm & M_UINT32);
                             break;
                         case 0xa:
                             // sfgtsi
@@ -638,7 +639,7 @@ public class CPU {
                     rA = this.r.get((ins >> 16) & 0x1F) ;
                     rB = this.r.get((ins >> 11) & 0x1F) ;
                     rindex = (ins >> 21) & 0x1F;
-                    message.Debug("3op " + (ins & 0x3CF) + ": " + rindex + " <- " + rA + " . " + rB);
+                    //message.Debug("3op " + (ins & 0x3CF) + ": " + rindex + " <- " + rA + " . " + rB);
                     switch (ins & 0x3CF) {
                         case 0x0:
                             // add signed
@@ -753,7 +754,7 @@ public class CPU {
                             break;
                         case 0x3:
                             // sfgeu
-                            this.SR_F = this.r.get((ins >> 16) & 0x1F) >= (this.r.get((ins >> 11) & 0x1F) & M_UINT32);
+                            this.SR_F = (this.r.get((ins >> 16) & 0x1F) & M_UINT32) >= (this.r.get((ins >> 11) & 0x1F) & M_UINT32);
                             break;
                         case 0x4:
                             // sfltu
@@ -761,7 +762,7 @@ public class CPU {
                             break;
                         case 0x5:
                             // sfleu
-                            this.SR_F = this.r.get((ins >> 16) & 0x1F) <= (this.r.get((ins >> 11) & 0x1F) & M_UINT32);
+                            this.SR_F = (this.r.get((ins >> 16) & 0x1F) & M_UINT32) <= (this.r.get((ins >> 11) & 0x1F) & M_UINT32);
                             break;
                         case 0xa:
                             // sfgts
@@ -791,12 +792,13 @@ public class CPU {
                     break;
             }
 
-            if(this.pc << 2 >= 0x0035417c) {
-                System.out.print(message.addrToString(this.pc << 2) + " regs ");
-                        for(int i = 0; i < 8; i++)
-                            System.out.print(i + "=" + message.addrToString(this.r.get(i)) + " ");
-                System.out.println();
-            }
+//            if(this.pc << 2 == 0x005501d4) this.print = true;
+//            if(print) {
+//                System.out.print(message.addrToString(this.pc << 2) + " regs ");
+//                for (int i = 0; i < 8; i++)
+//                    System.out.print(i + "=" + message.addrToString(this.r.get(i)) + " ");
+//                System.out.println();
+//            }
 
             this.pc = this.nextpc++;
             this.delayed_inst = false;
@@ -821,12 +823,12 @@ public class CPU {
                 // Data MMU
                // x &= 0x0fffffff; // remove this
                 this.group1.put(address, x);
-                message.Debug(message.addrToString(this.pc << 2)  + " set DTLB " + message.addrToString(address) + " = " + message.addrToString(x));
+                //message.Debug(message.addrToString(this.pc << 2)  + " set DTLB " + message.addrToString(address) + " = " + message.addrToString(x));
                 break;
             case 2:
                 // ins MMU
                 this.group2.put(address, x);
-                message.Debug(message.addrToString(this.pc << 2)  + " set ITLB " + message.addrToString(address) + " = " + message.addrToString(x));
+               // message.Debug(message.addrToString(this.pc << 2)  + " set ITLB " + message.addrToString(address) + " = " + message.addrToString(x));
                 break;
             case 3:
                 // data cache, not supported
