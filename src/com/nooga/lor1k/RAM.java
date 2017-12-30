@@ -7,10 +7,10 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
 public class RAM {
-    ByteBuffer heap;
+    public ByteBuffer heap;
     public ShortBuffer int16mem;
     public IntBuffer int32mem;
-    int offset;
+    public int offset;
 
 
     private Device[] devices;

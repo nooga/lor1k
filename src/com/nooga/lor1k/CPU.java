@@ -1,6 +1,8 @@
 package com.nooga.lor1k;
 
 
+import com.nooga.lor1k.gui.Debug;
+
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
@@ -23,10 +25,10 @@ public class CPU {
 
     private RAM ram;
 
-    private long clock = 0;
+    public long clock = 0;
 
-    private int pc = 0;
-    private int nextpc = 0;
+    public int pc = 0;
+    public int nextpc = 0;
     private boolean delayed_inst = false;
 
     public IntBuffer r; // TODO change to private later
@@ -66,6 +68,9 @@ public class CPU {
     private boolean stop_flag;
     private boolean print = false;
 
+
+    private BreakSource breakSource;
+
     public CPU(MessageBus message_bus, RAM ram) {
         this.message = message_bus;
 
@@ -84,7 +89,7 @@ public class CPU {
     public void Reset() {
         this.stop_flag = false;
 
-        this.TTMR = 0x0;
+        this.TTMR = 0x0;//0x1 << 30;
         this.TTCR = 0x0;
         this.PICMR = 0x3;
         this.PICSR = 0x0;
@@ -150,6 +155,45 @@ public class CPU {
         return this.ram.Read32Big((int)(((tlbtr & 0xFFFFE000) | (addr & 0x1FFF)) & 0xFFFFFFFFL));
     }
 
+    // resolve instruction address
+    public int getInstructionPhysicalAddr(int addr) {
+        if (!this.SR_IME) {
+            return addr;
+        }
+        // pagesize is 8192 bytes
+        // nways are 1
+        // nsets are 64
+
+        int setindex = (addr >> 13) & 63;
+        setindex &= 63; // number of sets
+        int tlmbr = this.group2.get(0x200 | setindex);
+
+        // test if tlmbr is valid
+        if (((tlmbr & 1) == 0) || ((tlmbr >> 19) != (addr >> 19))) {
+            return -1;
+        }
+        // set lru
+        if (0 != (tlmbr & 0xC0)) {
+            return -1;
+        }
+
+        int tlbtr = this.group2.get(0x280 | setindex);
+        //Test for page fault
+        // check if supervisor mode
+        if (this.SR_SM) {
+            // check if user read enable is not set(URE)
+            if (0 == (tlbtr & 0x40)) {
+                return -1;
+            }
+        } else {
+            // check if supervisor read enable is not set (SRE)
+            if (0 == (tlbtr & 0x80)) {
+                return -1;
+            }
+        }
+        return (int)(((tlbtr & 0xFFFFE000) | (addr & 0x1FFF)) & 0xFFFFFFFFL);
+    }
+
 
     public void step(int steps, int clock_speed) {
         int ins, jump, rindex, imm;
@@ -166,7 +210,7 @@ public class CPU {
             this.clock++;
 
             // do this not so often
-            if (0 != (steps & 1023)) {
+            if (0 != (steps & 63)) {
                 // ---------- TICK ----------
                 // timer enabled
                 if ((this.TTMR >> 30) != 0) {
@@ -788,11 +832,12 @@ public class CPU {
 
                 default:
                     System.out.format("illegal instruction pc=%8x ins=%8x\n", this.pc << 2, ins);
-                    message.Abort(this);
+                    //message.Abort(this);
                     break;
             }
 
-//            if(this.pc << 2 == 0x005501d4) this.print = true;
+//            this.print = true;
+//            if(this.pc << 2 == 0xc0002ea4) message.Abort(this);
 //            if(print) {
 //                System.out.print(message.addrToString(this.pc << 2) + " regs ");
 //                for (int i = 0; i < 8; i++)
@@ -802,6 +847,14 @@ public class CPU {
 
             this.pc = this.nextpc++;
             this.delayed_inst = false;
+
+            if(this.breakSource != null) {
+                int p = getInstructionPhysicalAddr(this.pc << 2);
+                if(this.breakSource.shouldStop(p)) {
+                    this.breakSource.executionStopped(p);
+                    return;
+                }
+            }
 
         } while(--steps != 0);
     }
@@ -866,7 +919,7 @@ public class CPU {
                             // TODO Marcin was commented out in the original
                             // looks like it's not lethal
 
-                            //message.Debug("Error in SetSPR: Timer mode other than continuous not supported");
+                            message.Debug("Error in SetSPR: Timer mode other than continuous not supported");
                             //message.Abort(this);
                         }
                         break;
@@ -1115,5 +1168,9 @@ public class CPU {
 
     public void stop() {
         this.stop_flag = true;
+    }
+
+    public void setBreakSource(BreakSource breakSource) {
+        this.breakSource = breakSource;
     }
 }

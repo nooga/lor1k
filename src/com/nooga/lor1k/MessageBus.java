@@ -1,12 +1,24 @@
 package com.nooga.lor1k;
 
+import java.util.Vector;
+
 public class MessageBus {
+
+    Vector<MessageBusListener> listeners;
+
     public MessageBus() {
+        listeners = new Vector<>();
     }
 
     public void Debug(String s) {
         System.out.println("D   " + s);
+        for(MessageBusListener l : listeners) {
+            l.onMessage(s);
+        }
+    }
 
+    public void registerBusListener(MessageBusListener l) {
+        listeners.add(l);
     }
 
     public void Abort() {
@@ -16,6 +28,7 @@ public class MessageBus {
     public void Abort(CPU cpu) {
         cpu.stop();
         System.out.println("CPU Panic! Stopped Execution.");
+        //System.exit(1);
     }
 
     public String addrToString(int i) {

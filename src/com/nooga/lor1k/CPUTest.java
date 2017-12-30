@@ -63,5 +63,10 @@ public class CPUTest {
         //report("R[3] = " + String.format("%x", cpu.r.get(3)));
 
         report("Test finished " + name);
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
