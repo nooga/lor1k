@@ -3,6 +3,9 @@ package com.nooga.lor1k;
 
 import com.nooga.lor1k.gui.Debug;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
@@ -20,6 +23,7 @@ public class CPU {
     private static final int SPR_VR = 0; // Version register
 
     private static final long M_UINT32 = 0xFFFFFFFFL;
+    private boolean dolog;
 
     private MessageBus message;
 
@@ -70,6 +74,7 @@ public class CPU {
 
 
     private BreakSource breakSource;
+    private PrintWriter log;
 
     public CPU(MessageBus message_bus, RAM ram) {
         this.message = message_bus;
@@ -82,6 +87,14 @@ public class CPU {
         this.group0 = this.ram.int32Area(0x2000, 0x2000);
         this.group1 = this.ram.int32Area(0x4000, 0x2000);
         this.group2 = this.ram.int32Area(0x6000, 0x2000);
+
+        try {
+            this.log = new PrintWriter("pcdump.txt", "UTF-8");
+        } catch (FileNotFoundException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        this.dolog = true;
 
         this.Reset();
     }
@@ -195,6 +208,14 @@ public class CPU {
     }
 
 
+    private void dumpState(PrintWriter w) {
+        w.format("%08x %08x ", this.pc, this.nextpc);
+        for(int i = 0; i < 32; i++) {
+            w.format("%08x ", this.r.get(i));
+        }
+        w.println();
+    }
+
     public void step(int steps, int clock_speed) {
         int ins, jump, rindex, imm;
         int rA, rB, rD;
@@ -211,6 +232,7 @@ public class CPU {
 
             // do this not so often
             if (0 != (steps & 63)) {
+                //System.out.println(this.clock);
                 // ---------- TICK ----------
                 // timer enabled
                 if ((this.TTMR >> 30) != 0) {
@@ -231,7 +253,18 @@ public class CPU {
                 }
             }
 
+            if(this.dolog) {
+                //this.log.println(message.addrToString(this.pc));
+                dumpState(this.log);
+                if(this.clock == 112000) {
+                    System.out.println("dumped pclog");
+                    this.log.close();
+                    this.dolog = false;
+                }
+            }
+
             ins = this.getInstruction(this.pc << 2) ;
+           // System.out.println(message.addrToString(this.pc) + " " + Disasm.disasm(ins));
 
             //message.Debug("T   " + message.addrToString(this.pc << 2) + " : " + message.instrToString(ins) );
 
@@ -1033,7 +1066,7 @@ public class CPU {
 
     private void Exception(int ex_type, int addr) {
         int except_vector = ex_type | (this.SR_EPH ? 0xf0000000 : 0x0);
-        message.Debug("Info: Raising Exception " + CPUException.toString(ex_type) + "(" + message.addrToString(ex_type)+") at " + message.addrToString(addr));
+        //message.Debug("Info: Raising Exception " + CPUException.toString(ex_type) + "(" + message.addrToString(ex_type)+") at " + message.addrToString(addr));
 
         this.SetSPR(SPR_EEAR_BASE, addr);
         this.SetSPR(SPR_ESR_BASE, this.GetFlags());

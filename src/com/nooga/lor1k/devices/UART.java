@@ -94,19 +94,19 @@ public class UART extends Device {
         this.FCR = 0x0; // FIFO Control;
         this.MCR = 0x0; // Modem Control
         
-        this.rxbuf = new ArrayBlockingQueue<>(0x1000);
-        this.txbuf = new ArrayBlockingQueue<>(0x1000);
+        this.rxbuf = new ArrayBlockingQueue<>(0x100000);
+        this.txbuf = new ArrayBlockingQueue<>(0x100000);
     }
 
     public void step() {
         if(!this.txbuf.isEmpty()) {
-            Byte[] raw = (Byte[])this.txbuf.toArray();
-            byte[] bytes = new byte[raw.length];
+            Byte b;
+            byte[] bytes = new byte[this.txbuf.size()];
             int j = 0;
-            for(Byte b: raw)
+            while((b = this.txbuf.poll()) != null)
                 bytes[j++] = b;
 
-            System.out.print(bytes);
+            System.out.print(new String(bytes));
         }
     }
 

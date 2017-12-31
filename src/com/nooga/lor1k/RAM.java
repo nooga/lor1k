@@ -10,6 +10,7 @@ public class RAM {
     public ByteBuffer heap;
     public ShortBuffer int16mem;
     public IntBuffer int32mem;
+    public ByteBuffer int8mem;
     public int offset;
 
 
@@ -20,6 +21,7 @@ public class RAM {
         this.heap = ByteBuffer.allocateDirect(size);
         this.int32mem = this.int32Area(offset, size - offset);
         this.int16mem = this.int16Area(offset, size - offset);
+        this.int8mem = (ByteBuffer)((ByteBuffer)this.heap.position(offset)).slice().limit(size-offset);
 
         this.devices = new Device[0x100];
     }
@@ -49,14 +51,14 @@ public class RAM {
 
     public byte Read8Big(int addr) {
         if(addr >= 0) {
-            return this.heap.get(addr);
+            return this.int8mem.get(addr);
         }
         return this.devices[(addr >> 24) & 0xFF].readReg8(addr & 0xFFFFFF);
     }
 
     public void Write8Big(int addr, byte value) {
         if(addr >= 0) {
-            this.heap.put(addr, value);
+            this.int8mem.put(addr, value);
         } else {
             this.devices[(addr >> 24) & 0xFF].writeReg8(addr & 0xFFFFFF, value);
         }
