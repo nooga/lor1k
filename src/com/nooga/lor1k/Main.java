@@ -34,7 +34,7 @@ public class Main {
 //        frame.setVisible(true);
 
         MessageBus mb = new MessageBus();
-        RAM ram = new RAM(32 * 0x100000, 0x100000);
+        RAM ram = new RAM(33 * 0x100000, 0x100000);
         CPU cpu = new CPU(mb, ram);
         UART uart = new UART(mb, cpu, 0x2);
 
@@ -51,7 +51,7 @@ public class Main {
 
             Path path;
 
-            if (true) { //load jor1k kernel
+            if (false) { //load jor1k kernel
                 path = Paths.get("kernel/vmlinux.bin");
                 ram.heap.position(ram.offset);
                 FileInputStream in;
