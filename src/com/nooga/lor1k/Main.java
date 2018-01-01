@@ -3,6 +3,7 @@ package com.nooga.lor1k;
 import com.nooga.lor1k.devices.Device;
 import com.nooga.lor1k.devices.UART;
 import com.nooga.lor1k.gui.Debug;
+import com.nooga.lor1k.io.TerminalServer;
 
 import javax.swing.*;
 import java.io.FileInputStream;
@@ -37,6 +38,7 @@ public class Main {
         RAM ram = new RAM(33 * 0x100000, 0x100000);
         CPU cpu = new CPU(mb, ram);
         UART uart = new UART(mb, cpu, 0x2);
+        TerminalServer ts = new TerminalServer(uart, 3039);
 
        // CPUTest test = new CPUTest("cputests/or1k/");
        // test.run("or1k-basic");
@@ -68,11 +70,13 @@ public class Main {
             }
             cpu.Reset();
 
+            ts.start();
             //BytePrinter.print(ram.heap, System.out, ram.offset, 16);
 //
+
             while (true) {
                 cpu.step(0x200000, 10);
-                uart.step();
+                uart.step(ts);
             }
 //        System.out.format("%08x", cpu.r.get(2));
         }

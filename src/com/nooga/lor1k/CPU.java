@@ -253,15 +253,15 @@ public class CPU {
                 }
             }
 
-            if(this.dolog) {
-                //this.log.println(message.addrToString(this.pc));
-                dumpState(this.log);
-                if(this.clock == 112000) {
-                    System.out.println("dumped pclog");
-                    this.log.close();
-                    this.dolog = false;
-                }
-            }
+//            if(this.dolog) {
+//                //this.log.println(message.addrToString(this.pc));
+//                dumpState(this.log);
+//                if(this.clock == 112000) {
+//                    System.out.println("dumped pclog");
+//                    this.log.close();
+//                    this.dolog = false;
+//                }
+//            }
 
             ins = this.getInstruction(this.pc << 2) ;
            // System.out.println(message.addrToString(this.pc) + " " + Disasm.disasm(ins));

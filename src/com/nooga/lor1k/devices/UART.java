@@ -2,6 +2,7 @@ package com.nooga.lor1k.devices;
 
 import com.nooga.lor1k.CPU;
 import com.nooga.lor1k.MessageBus;
+import com.nooga.lor1k.io.IOListener;
 import jdk.nashorn.internal.objects.NativeArray;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -98,13 +99,26 @@ public class UART extends Device {
         this.txbuf = new ArrayBlockingQueue<>(0x100000);
     }
 
-    public void step() {
+    public void write(byte[] bs) {
+        for(byte b : bs) {
+            try {
+                this.rxbuf.put(b);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void step(IOListener listener) {
         if(!this.txbuf.isEmpty()) {
             Byte b;
             byte[] bytes = new byte[this.txbuf.size()];
             int j = 0;
             while((b = this.txbuf.poll()) != null)
                 bytes[j++] = b;
+
+            if(listener != null)
+                listener.put(bytes);
 
             System.out.print(new String(bytes));
         }
