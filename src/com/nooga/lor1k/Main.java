@@ -37,7 +37,11 @@ public class Main {
         MessageBus mb = new MessageBus();
         RAM ram = new RAM(33 * 0x100000, 0x100000);
         CPU cpu = new CPU(mb, ram);
+
         UART uart = new UART(mb, cpu, 0x2);
+        UART uart1 = new UART(mb, cpu, 0x3);
+        Device irq = new Device(mb, "IRQ");
+
         TerminalServer ts = new TerminalServer(uart, 3039);
 
        // CPUTest test = new CPUTest("cputests/or1k/");
@@ -50,13 +54,13 @@ public class Main {
             }
 
             ram.addDevice(uart, 0x90000000, 0x7);
+            ram.addDevice(uart1, 0x96000000, 0x7);
 
             Path path;
 
             if (false) { //load jor1k kernel
                 path = Paths.get("kernel/vmlinux.bin");
                 ram.heap.position(ram.offset);
-                FileInputStream in;
                 try {
                    ram.heap.put(Files.readAllBytes(path));
                 } catch (IOException e) {
@@ -75,7 +79,7 @@ public class Main {
 //
 
             while (true) {
-                cpu.step(0x200000, 10);
+                cpu.step(1, 10);
                 uart.step(ts);
             }
 //        System.out.format("%08x", cpu.r.get(2));

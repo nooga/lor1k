@@ -103,6 +103,9 @@ public class UART extends Device {
         for(byte b : bs) {
             try {
                 this.rxbuf.put(b);
+                this.LSR = (byte)((this.LSR | UART_LSR_DATA_READY) & 0xFF);
+                this.ThrowInterrupt(UART_IIR_CTI);
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -167,6 +170,9 @@ public class UART extends Device {
 
     @Override
     public void writeReg8(int addr, byte value) {
+//        if(addr != UART_TXBUF)
+//            System.out.println("UART <- " + message.addrToString(addr) + " " +  String.format("%02x", value));
+
         value &= 0xFF;
 
         if (0 != (this.LCR & UART_LCR_DLAB)) {
@@ -201,6 +207,7 @@ public class UART extends Device {
                 break;
 
             case UART_IER:
+                message.Debug("UART_IER");
                 // 2 = 10b ,5=101b, 7=111b
                 this.IER = (byte)(value & 0x0F); // only the first four bits are valid
                 this.ints &= ~(1 << UART_IER_THRI);
@@ -240,6 +247,9 @@ public class UART extends Device {
 
     @Override
     public byte readReg8(int addr) {
+
+//        if(addr != UART_LSR)
+//             System.out.println("UART -> " + message.addrToString(addr));
 
         if (0 != (this.LCR & UART_LCR_DLAB)) {  // Divisor latch access bit
             switch (addr) {

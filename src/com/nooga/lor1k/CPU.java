@@ -263,6 +263,10 @@ public class CPU {
 //                }
 //            }
 
+//            if(104813510 >= this.clock) {
+//                System.out.println("KURWAA");
+//            }
+
             ins = this.getInstruction(this.pc << 2) ;
            // System.out.println(message.addrToString(this.pc) + " " + Disasm.disasm(ins));
 
@@ -881,13 +885,7 @@ public class CPU {
             this.pc = this.nextpc++;
             this.delayed_inst = false;
 
-            if(this.breakSource != null) {
-                int p = getInstructionPhysicalAddr(this.pc << 2);
-                if(this.breakSource.shouldStop(p)) {
-                    this.breakSource.executionStopped(p);
-                    return;
-                }
-            }
+
 
         } while(--steps != 0);
     }
@@ -1066,7 +1064,9 @@ public class CPU {
 
     private void Exception(int ex_type, int addr) {
         int except_vector = ex_type | (this.SR_EPH ? 0xf0000000 : 0x0);
-        //message.Debug("Info: Raising Exception " + CPUException.toString(ex_type) + "(" + message.addrToString(ex_type)+") at " + message.addrToString(addr));
+
+        if(addr == 0xffff9aa0)
+            message.Debug("Info: Raising Exception " + CPUException.toString(ex_type) + "(" + message.addrToString(ex_type)+") at " + message.addrToString(addr));
 
         this.SetSPR(SPR_EEAR_BASE, addr);
         this.SetSPR(SPR_ESR_BASE, this.GetFlags());
@@ -1191,6 +1191,7 @@ public class CPU {
     }
 
     public void RaiseInterrupt(int line, int cpuid) {
+        System.out.println("raise interrupt " + line);
         this.PICSR |= 1 << line;
         this.CheckForInterrupt();
     }
